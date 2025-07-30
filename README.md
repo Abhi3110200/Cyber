@@ -166,6 +166,6 @@ The system meets all CyberXplore requirements with clean, production-ready code!
 
 ## Video Preview 
 
-<video src="assets/video.mp4" controls width="600" muted>
+<video src="assets/video.mp4" controls width="800" muted>
 
 </video>
