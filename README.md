@@ -2,6 +2,10 @@
 
 A Node.js backend service for secure file upload and malware scanning with custom queue implementation.
 
+## Deployed Link
+
+Live Link: https://cyberxlpore.vercel.app/
+
 ## 🚀 Features
 
 ### 1. POST /upload – File Upload API
