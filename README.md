@@ -58,18 +58,25 @@ backend/
 ```
 ## 🚀 Quick Start
 
-1. **Install dependencies**:
-```bash
-npm install
-```
+## 📚 Frontend Setup
 
-2. **Setup environment**:
+1. **Setup environment**:
 ```bash
 cp .env.example .env
 # Edit .env with your MongoDB URI   
 ```
 
-3. **Start server**:
+2. **Navigate to directory**
+```bash
+cd frontend
+```
+
+3. **Install dependencies**:
+```bash
+npm install
+```
+
+4. **Start server for frontend**:
 ```bash
 npm run dev
 ```
@@ -105,6 +112,29 @@ Upload files containing these keywords to trigger infection:
 - `GET /api/files/:id` - Get specific file details
 - `GET /api/queue/status` - Get queue processing status
 - `GET /health` - Health check
+
+## 📚 Backend Setup
+
+1. **Setup environment**:
+```bash
+cp .env.example .env
+# Edit .env with your MongoDB URI   
+```
+
+2. **Navigate to directory**
+```bash
+cd backend
+```
+
+3. **Install dependencies**:
+```bash
+npm install
+```
+
+4. **Start server for backend**:
+```bash
+npm start
+```
 
 ## ⚡ Queue System
 
