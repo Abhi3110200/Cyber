@@ -167,3 +167,5 @@ The system meets all CyberXplore requirements with clean, production-ready code!
 ## Video Preview 
 
 🎥 **[Watch Demo Video](assets/video.mp4)**
+
+![alt text](image.png)![alt text](image-1.png)
