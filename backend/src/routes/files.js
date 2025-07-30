@@ -139,8 +139,21 @@ router.get("/files", async (req, res) => {
     const { status, page = 1, limit = 10 } = req.query
 
     const filter = {}
+
     if (status && status !== "all") {
-      filter.status = status
+      if (status === "pending") {
+        filter.status = "pending"
+      } else if (status === "scanning") {
+        filter.status = "scanning"
+      } else if (status === "scanned") {
+        filter.status = "scanned"
+      } else if (status === "clean") {
+        filter.status = "scanned"
+        filter.result = "clean"
+      } else if (status === "infected") {
+        filter.status = "scanned"
+        filter.result = "infected"
+      }
     }
 
     const files = await File.find(filter)

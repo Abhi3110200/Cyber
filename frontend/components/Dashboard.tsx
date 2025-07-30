@@ -108,14 +108,12 @@ export function Dashboard() {
     console.log(`🔍 Filter changed from "${filter}" to "${newFilter}"`)
     setFilter(newFilter)
     setCurrentPage(1) // Reset to first page when filter changes
-    fetchFiles(1, itemsPerPage, newFilter)
   }
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
     console.log(`📄 Page changed from ${currentPage} to ${newPage}`)
     setCurrentPage(newPage)
-    fetchFiles(newPage, itemsPerPage, filter)
   }
 
   // Handle items per page change
@@ -124,7 +122,6 @@ export function Dashboard() {
     console.log(`📄 Items per page changed from ${itemsPerPage} to ${limit}`)
     setItemsPerPage(limit)
     setCurrentPage(1) // Reset to first page when limit changes
-    fetchFiles(1, limit, filter)
   }
 
   const fetchQueueStatus = async () => {
@@ -138,6 +135,9 @@ export function Dashboard() {
 
   useEffect(() => {
     fetchFiles(currentPage, itemsPerPage, filter)
+  }, [filter, currentPage, itemsPerPage])
+
+  useEffect(() => {
     fetchQueueStatus()
 
     // Set up auto-refresh
