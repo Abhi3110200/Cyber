@@ -37,7 +37,7 @@ A Node.js backend service for secure file upload and malware scanning with custo
 
 ## 📁 Project Structure
 
-\`\`\`
+```
 backend/
 ├── models/
 │   └── File.js              # MongoDB schema
@@ -51,25 +51,24 @@ backend/
 ├── uploads/                 # Uploaded files storage
 ├── server.js                # Main server
 └── package.json
-\`\`\`
-
+```
 ## 🚀 Quick Start
 
 1. **Install dependencies**:
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 2. **Setup environment**:
-\`\`\`bash
+```bash
 cp .env.example .env
-# Edit .env with your MongoDB URI
-\`\`\`
+# Edit .env with your MongoDB URI   
+```
 
 3. **Start server**:
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 
 ## 🧪 Testing Malware Detection
 
@@ -80,7 +79,7 @@ Upload files containing these keywords to trigger infection:
 
 ## 📊 MongoDB Schema
 
-\`\`\`javascript
+```javascript
 {
   "filename": "invoice.pdf",
   "originalName": "user-invoice.pdf", 
@@ -93,7 +92,7 @@ Upload files containing these keywords to trigger infection:
   "scannedAt": "2024-01-15T10:30:05.123Z",  // ISO timestamp
   "dangerousKeywords": ["rm -rf"]
 }
-\`\`\`
+```
 
 ## 🔧 API Endpoints
 
