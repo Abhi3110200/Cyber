@@ -4,7 +4,7 @@ A Node.js backend service for secure file upload and malware scanning with custo
 
 ## Deployed Link
 
-Live Link: https://cyberxlpore.vercel.app/
+Live Link: [https://cyberxlpore.vercel.app/](https://cyberxplore.vercel.app/)
 
 ## 🚀 Features
 
