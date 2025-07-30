@@ -53,16 +53,19 @@ export const uploadFile = async (file: File): Promise<UploadResponse> => {
   return response.data
 }
 
-export const getFiles = async (status?: string): Promise<FilesResponse> => {
+export const getFiles = async (status?: string, page = 1, limit = 10): Promise<FilesResponse> => {
   const params = new URLSearchParams()
   if (status && status !== "all") params.append("status", status)
-  // params.append("page", page.toString())
-  // params.append("limit", limit.toString())
+  params.append("page", page.toString())
+  params.append("limit", limit.toString())
 
-  const response = await api.get(`/api/files`);
-  console.log(response.data);
+  console.log(`📊 Fetching files with params: ${params.toString()}`)
+
+  const response = await api.get(`/api/files?${params.toString()}`)
+  console.log("📊 API Response:", response.data)
   return response.data
 }
+
 
 export const getFile = async (id: string): Promise<FileData> => {
   const response = await api.get(`/api/files/${id}`)

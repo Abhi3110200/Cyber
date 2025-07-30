@@ -28,17 +28,41 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 import { getFiles, getFile, getQueueStatus, type FileData } from "@/lib/api"
 import { socketManager } from "@/lib/socket"
 
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
 export function Dashboard() {
   const [files, setFiles] = useState<FileData[]>([])
-  const [allFiles, setAllFiles] = useState<FileData[]>([]) // Store all files for local filtering
+  const [allFiles, setAllFiles] = useState<FileData[]>([]) // Store all files for stats
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState("all")
   const [selectedFile, setSelectedFile] = useState<FileData | null>(null)
   const [queueStatus, setQueueStatus] = useState({ size: 0, processing: false })
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
+  })
   const [stats, setStats] = useState({
     total: 0,
     clean: 0,
@@ -47,24 +71,27 @@ export function Dashboard() {
   })
   const router = useRouter()
 
-  const fetchFiles = async () => {
+  const fetchFiles = async (page = 1, limit = itemsPerPage, statusFilter = "all") => {
     try {
-      console.log("📊 Fetching all files...")
-      // Always fetch all files first
-      const response = await getFiles("all")
-      console.log("📊 All files received:", response.files.length)
+      console.log(`📊 Fetching files - Page: ${page}, Limit: ${limit}, Filter: ${statusFilter}`)
 
-      setAllFiles(response.files)
+      // Fetch files with pagination
+      const response = await getFiles(statusFilter, page, limit)
+      console.log("📊 Files received:", response.files.length)
+      console.log("📊 Pagination info:", response.pagination)
 
-      // Apply local filtering
-      const filteredFiles = applyFilter(response.files, filter)
-      setFiles(filteredFiles)
+      setFiles(response.files)
+      setPagination(response.pagination)
+
+      // Also fetch all files for stats calculation (without pagination)
+      const allFilesResponse = await getFiles("all", 1, 1000) // Get up to 1000 files for stats
+      setAllFiles(allFilesResponse.files)
 
       // Calculate stats from all files
-      const total = response.files.length
-      const clean = response.files.filter((f) => f.result === "clean").length
-      const infected = response.files.filter((f) => f.result === "infected").length
-      const pending = response.files.filter((f) => f.status === "pending" || f.status === "scanning").length
+      const total = allFilesResponse.files.length
+      const clean = allFilesResponse.files.filter((f) => f.result === "clean").length
+      const infected = allFilesResponse.files.filter((f) => f.result === "infected").length
+      const pending = allFilesResponse.files.filter((f) => f.status === "pending" || f.status === "scanning").length
 
       setStats({ total, clean, infected, pending })
       console.log("📊 Stats calculated:", { total, clean, infected, pending })
@@ -76,46 +103,28 @@ export function Dashboard() {
     }
   }
 
-  // Local filtering function
-  const applyFilter = (fileList: FileData[], filterValue: string): FileData[] => {
-    console.log(`🔍 Applying filter: ${filterValue} to ${fileList.length} files`)
-
-    let filtered: FileData[]
-
-    switch (filterValue) {
-      case "pending":
-        filtered = fileList.filter((f) => f.status === "pending")
-        break
-      case "scanning":
-        filtered = fileList.filter((f) => f.status === "scanning")
-        break
-      case "scanned":
-        filtered = fileList.filter((f) => f.status === "scanned")
-        break
-      case "clean":
-        filtered = fileList.filter((f) => f.result === "clean")
-        break
-      case "infected":
-        filtered = fileList.filter((f) => f.result === "infected")
-        break
-      case "all":
-      default:
-        filtered = fileList
-        break
-    }
-
-    console.log(`🔍 Filter result: ${filtered.length} files match "${filterValue}"`)
-    return filtered
-  }
-
   // Handle filter change
   const handleFilterChange = (newFilter: string) => {
     console.log(`🔍 Filter changed from "${filter}" to "${newFilter}"`)
     setFilter(newFilter)
+    setCurrentPage(1) // Reset to first page when filter changes
+    fetchFiles(1, itemsPerPage, newFilter)
+  }
 
-    // Apply filter to existing data immediately
-    const filteredFiles = applyFilter(allFiles, newFilter)
-    setFiles(filteredFiles)
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    console.log(`📄 Page changed from ${currentPage} to ${newPage}`)
+    setCurrentPage(newPage)
+    fetchFiles(newPage, itemsPerPage, filter)
+  }
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (newLimit: string) => {
+    const limit = Number.parseInt(newLimit)
+    console.log(`📄 Items per page changed from ${itemsPerPage} to ${limit}`)
+    setItemsPerPage(limit)
+    setCurrentPage(1) // Reset to first page when limit changes
+    fetchFiles(1, limit, filter)
   }
 
   const fetchQueueStatus = async () => {
@@ -128,14 +137,14 @@ export function Dashboard() {
   }
 
   useEffect(() => {
-    fetchFiles()
+    fetchFiles(currentPage, itemsPerPage, filter)
     fetchQueueStatus()
 
     // Set up auto-refresh
     const interval = setInterval(() => {
-      fetchFiles()
+      fetchFiles(currentPage, itemsPerPage, filter)
       fetchQueueStatus()
-    }, 5000)
+    }, 10000) // Increased to 10 seconds to reduce server load
 
     // Set up socket connection for real-time updates
     const socket = socketManager.connect()
@@ -143,19 +152,22 @@ export function Dashboard() {
     socket.on("fileStatusUpdate", (data) => {
       console.log("📡 Real-time update:", data)
 
-      // Update both allFiles and files
-      setAllFiles((prevFiles) => {
-        const updatedFiles = prevFiles.map((file) =>
+      // Update the current page files
+      setFiles((prevFiles) => {
+        return prevFiles.map((file) =>
           file.id === data.fileId
             ? { ...file, status: data.status, result: data.result, scannedAt: data.scannedAt }
             : file,
         )
+      })
 
-        // Also update the filtered files
-        const filteredFiles = applyFilter(updatedFiles, filter)
-        setFiles(filteredFiles)
-
-        return updatedFiles
+      // Update all files for stats
+      setAllFiles((prevFiles) => {
+        return prevFiles.map((file) =>
+          file.id === data.fileId
+            ? { ...file, status: data.status, result: data.result, scannedAt: data.scannedAt }
+            : file,
+        )
       })
 
       // Show toast notification
@@ -167,6 +179,11 @@ export function Dashboard() {
           icon: data.result === "infected" ? "🚨" : "✅",
           duration: 5000,
         })
+
+        // Refresh current page to get updated data
+        setTimeout(() => {
+          fetchFiles(currentPage, itemsPerPage, filter)
+        }, 1000)
       }
     })
 
@@ -174,15 +191,7 @@ export function Dashboard() {
       clearInterval(interval)
       socketManager.disconnect()
     }
-  }, [])
-
-  // Re-apply filter when allFiles changes
-  useEffect(() => {
-    if (allFiles.length > 0) {
-      const filteredFiles = applyFilter(allFiles, filter)
-      setFiles(filteredFiles)
-    }
-  }, [allFiles, filter])
+  }, [currentPage, itemsPerPage, filter])
 
   const handleViewDetails = async (fileId: string) => {
     try {
@@ -236,9 +245,167 @@ export function Dashboard() {
     return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
   }
 
+  // Generate pagination items
+  const generatePaginationItems = () => {
+    const items = []
+    const totalPages = pagination.pages
+    const currentPage = pagination.page
+
+    if (totalPages <= 7) {
+      // Show all pages if 7 or fewer
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handlePageChange(i)
+              }}
+              isActive={currentPage === i}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>,
+        )
+      }
+    } else {
+      // Complex pagination logic for many pages
+      if (currentPage <= 4) {
+        // Show first 5 pages, ellipsis, last page
+        for (let i = 1; i <= 5; i++) {
+          items.push(
+            <PaginationItem key={i}>
+              <PaginationLink
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  handlePageChange(i)
+                }}
+                isActive={currentPage === i}
+              >
+                {i}
+              </PaginationLink>
+            </PaginationItem>,
+          )
+        }
+        items.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        )
+        items.push(
+          <PaginationItem key={totalPages}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handlePageChange(totalPages)
+              }}
+            >
+              {totalPages}
+            </PaginationLink>
+          </PaginationItem>,
+        )
+      } else if (currentPage >= totalPages - 3) {
+        // Show first page, ellipsis, last 5 pages
+        items.push(
+          <PaginationItem key={1}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handlePageChange(1)
+              }}
+            >
+              1
+            </PaginationLink>
+          </PaginationItem>,
+        )
+        items.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        )
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          items.push(
+            <PaginationItem key={i}>
+              <PaginationLink
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  handlePageChange(i)
+                }}
+                isActive={currentPage === i}
+              >
+                {i}
+              </PaginationLink>
+            </PaginationItem>,
+          )
+        }
+      } else {
+        // Show first page, ellipsis, current-1, current, current+1, ellipsis, last page
+        items.push(
+          <PaginationItem key={1}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handlePageChange(1)
+              }}
+            >
+              1
+            </PaginationLink>
+          </PaginationItem>,
+        )
+        items.push(
+          <PaginationItem key="ellipsis1">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        )
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          items.push(
+            <PaginationItem key={i}>
+              <PaginationLink
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  handlePageChange(i)
+                }}
+                isActive={currentPage === i}
+              >
+                {i}
+              </PaginationLink>
+            </PaginationItem>,
+          )
+        }
+        items.push(
+          <PaginationItem key="ellipsis2">
+            <PaginationEllipsis />
+          </PaginationItem>,
+        )
+        items.push(
+          <PaginationItem key={totalPages}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handlePageChange(totalPages)
+              }}
+            >
+              {totalPages}
+            </PaginationLink>
+          </PaginationItem>,
+        )
+      }
+    }
+
+    return items
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-gray-600">Loading dashboard...</p>
@@ -337,7 +504,7 @@ export function Dashboard() {
                   Your uploaded files and their security scan status
                   {filter !== "all" && (
                     <span className="block sm:inline sm:ml-2 text-blue-600 mt-1 sm:mt-0">
-                      (Filtered: {files.length} of {stats.total} files)
+                      (Filtered: {pagination.total} {filter} files)
                     </span>
                   )}
                 </CardDescription>
@@ -371,87 +538,128 @@ export function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 sm:space-y-4">
-                {files.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors space-y-3 sm:space-y-0"
-                  >
-                    <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                      {getStatusIcon(file.status, file.result)}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{file.filename}</p>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs sm:text-sm text-gray-500 space-y-1 sm:space-y-0">
-                          <span>{formatFileSize(file.size)}</span>
-                          <span>Uploaded: {formatDate(file.uploadedAt)}</span>
-                          {file.scannedAt && <span>Scanned: {formatDate(file.scannedAt)}</span>}
+              <>
+                <div className="space-y-3 sm:space-y-4">
+                  {files.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors space-y-3 sm:space-y-0"
+                    >
+                      <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                        {getStatusIcon(file.status, file.result)}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{file.filename}</p>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs sm:text-sm text-gray-500 space-y-1 sm:space-y-0">
+                            <span>{formatFileSize(file.size)}</span>
+                            <span>Uploaded: {formatDate(file.uploadedAt)}</span>
+                            {file.scannedAt && <span>Scanned: {formatDate(file.scannedAt)}</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between sm:justify-end space-x-3">
-                      {getStatusBadge(file.status, file.result)}
+                      <div className="flex items-center justify-between sm:justify-end space-x-3">
+                        {getStatusBadge(file.status, file.result)}
 
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => handleViewDetails(file.id)}>
-                            <Eye className="h-4 w-4" />
-                            <span className="ml-1 sm:hidden">Details</span>
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md sm:max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle>File Details</DialogTitle>
-                            <DialogDescription>Detailed information about the scanned file</DialogDescription>
-                          </DialogHeader>
-                          {selectedFile && (
-                            <div className="space-y-4 max-h-96 overflow-y-auto">
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">Filename</label>
-                                <p className="text-sm text-gray-900 break-all">{selectedFile.filename}</p>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">Size</label>
-                                <p className="text-sm text-gray-900">{formatFileSize(selectedFile.size)}</p>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">Type</label>
-                                <p className="text-sm text-gray-900">{selectedFile.mimetype}</p>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">Status</label>
-                                <div className="mt-1">{getStatusBadge(selectedFile.status, selectedFile.result)}</div>
-                              </div>
-                              {selectedFile.dangerousKeywords && selectedFile.dangerousKeywords.length > 0 && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => handleViewDetails(file.id)}>
+                              <Eye className="h-4 w-4" />
+                              <span className="ml-1 sm:hidden">Details</span>
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md sm:max-w-lg">
+                            <DialogHeader>
+                              <DialogTitle>File Details</DialogTitle>
+                              <DialogDescription>Detailed information about the scanned file</DialogDescription>
+                            </DialogHeader>
+                            {selectedFile && (
+                              <div className="space-y-4 max-h-96 overflow-y-auto">
                                 <div>
-                                  <label className="text-sm font-medium text-gray-700">Detected Threats</label>
-                                  <div className="mt-1 space-y-1">
-                                    {selectedFile.dangerousKeywords.map((keyword, index) => (
-                                      <Badge key={index} variant="destructive" className="mr-1 mb-1">
-                                        {keyword}
-                                      </Badge>
-                                    ))}
+                                  <label className="text-sm font-medium text-gray-700">Filename</label>
+                                  <p className="text-sm text-gray-900 break-all">{selectedFile.filename}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Size</label>
+                                  <p className="text-sm text-gray-900">{formatFileSize(selectedFile.size)}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Type</label>
+                                  <p className="text-sm text-gray-900">{selectedFile.mimetype}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-700">Status</label>
+                                  <div className="mt-1">{getStatusBadge(selectedFile.status, selectedFile.result)}</div>
+                                </div>
+                                {selectedFile.dangerousKeywords && selectedFile.dangerousKeywords.length > 0 && (
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-700">Detected Threats</label>
+                                    <div className="mt-1 space-y-1">
+                                      {selectedFile.dangerousKeywords.map((keyword, index) => (
+                                        <Badge key={index} variant="destructive" className="mr-1 mb-1">
+                                          {keyword}
+                                        </Badge>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">Uploaded</label>
-                                <p className="text-sm text-gray-900">{formatDate(selectedFile.uploadedAt)}</p>
-                              </div>
-                              {selectedFile.scannedAt && (
+                                )}
                                 <div>
-                                  <label className="text-sm font-medium text-gray-700">Scanned</label>
-                                  <p className="text-sm text-gray-900">{formatDate(selectedFile.scannedAt)}</p>
+                                  <label className="text-sm font-medium text-gray-700">Uploaded</label>
+                                  <p className="text-sm text-gray-900">{formatDate(selectedFile.uploadedAt)}</p>
                                 </div>
-                              )}
-                            </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
+                                {selectedFile.scannedAt && (
+                                  <div>
+                                    <label className="text-sm font-medium text-gray-700">Scanned</label>
+                                    <p className="text-sm text-gray-900">{formatDate(selectedFile.scannedAt)}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {pagination.pages > 1 && (
+                  <div className="mt-6 sm:mt-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                if (pagination.page > 1) {
+                                  handlePageChange(pagination.page - 1)
+                                }
+                              }}
+                              className={pagination.page === 1 ? "pointer-events-none opacity-50" : ""}
+                            />
+                          </PaginationItem>
+
+                          {generatePaginationItems()}
+
+                          <PaginationItem>
+                            <PaginationNext
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                if (pagination.page < pagination.pages) {
+                                  handlePageChange(pagination.page + 1)
+                                }
+                              }}
+                              className={pagination.page === pagination.pages ? "pointer-events-none opacity-50" : ""}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
