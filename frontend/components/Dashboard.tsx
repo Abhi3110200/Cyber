@@ -248,21 +248,21 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-2 sm:p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Shield className="h-6 w-6 text-blue-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Security Dashboard</h1>
-                <p className="text-gray-600">Monitor your file scans and security status</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Security Dashboard</h1>
+                <p className="text-sm sm:text-base text-gray-600">Monitor your file scans and security status</p>
               </div>
             </div>
-            <Button onClick={() => router.push("/")} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => router.push("/")} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
               <Upload className="mr-2 h-4 w-4" />
               Upload New File
             </Button>
@@ -270,10 +270,10 @@ export function Dashboard() {
 
           {/* Queue Status */}
           {queueStatus.size > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
               <div className="flex items-center space-x-2">
-                <Activity className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-900">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                <span className="font-medium text-blue-900 text-sm sm:text-base">
                   {queueStatus.processing ? "Processing" : "Queued"}: {queueStatus.size} file
                   {queueStatus.size !== 1 ? "s" : ""}
                 </span>
@@ -283,23 +283,23 @@ export function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-4 mb-8">
+        <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Files</CardTitle>
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Total Files</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+              <div className="text-xl sm:text-3xl font-bold text-gray-900">{stats.total}</div>
               <p className="text-xs text-gray-500 mt-1">All uploaded files</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Clean Files</CardTitle>
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Clean Files</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{stats.clean}</div>
+              <div className="text-xl sm:text-3xl font-bold text-green-600">{stats.clean}</div>
               <p className="text-xs text-gray-500 mt-1">
                 {stats.total > 0 ? Math.round((stats.clean / stats.total) * 100) : 0}% of total
               </p>
@@ -307,21 +307,21 @@ export function Dashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Threats Detected</CardTitle>
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Threats Detected</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-600">{stats.infected}</div>
+              <div className="text-xl sm:text-3xl font-bold text-red-600">{stats.infected}</div>
               <p className="text-xs text-gray-500 mt-1">Quarantined safely</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600">Pending Scans</CardTitle>
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Pending Scans</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-xl sm:text-3xl font-bold text-yellow-600">{stats.pending}</div>
               <p className="text-xs text-gray-500 mt-1">In queue or processing</p>
             </CardContent>
           </Card>
@@ -330,29 +330,28 @@ export function Dashboard() {
         {/* Files Table */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               <div>
-                <CardTitle>File Scan Results</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-lg sm:text-xl">File Scan Results</CardTitle>
+                <CardDescription className="text-sm">
                   Your uploaded files and their security scan status
                   {filter !== "all" && (
-                    <span className="ml-2 text-blue-600">
+                    <span className="block sm:inline sm:ml-2 text-blue-600 mt-1 sm:mt-0">
                       (Filtered: {files.length} of {stats.total} files)
                     </span>
                   )}
                 </CardDescription>
               </div>
               <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-gray-500" />
+                <Filter className="h-4 w-4 text-gray-500 flex-shrink-0" />
                 <Select value={filter} onValueChange={handleFilterChange}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-28 sm:w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Files</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="scanning">Scanning</SelectItem>
-                    {/* <SelectItem value="scanned">Scanned</SelectItem> */}
                     <SelectItem value="clean">Clean</SelectItem>
                     <SelectItem value="infected">Infected</SelectItem>
                   </SelectContent>
@@ -362,9 +361,9 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             {files.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">
+              <div className="text-center py-8 sm:py-12">
+                <FileText className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 text-base sm:text-lg">
                   {filter === "all" ? "No files found" : `No ${filter} files found`}
                 </p>
                 <p className="text-gray-400 text-sm">
@@ -372,17 +371,17 @@ export function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {files.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors space-y-3 sm:space-y-0"
                   >
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
                       {getStatusIcon(file.status, file.result)}
-                      <div>
-                        <p className="font-medium text-gray-900">{file.filename}</p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{file.filename}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs sm:text-sm text-gray-500 space-y-1 sm:space-y-0">
                           <span>{formatFileSize(file.size)}</span>
                           <span>Uploaded: {formatDate(file.uploadedAt)}</span>
                           {file.scannedAt && <span>Scanned: {formatDate(file.scannedAt)}</span>}
@@ -390,25 +389,26 @@ export function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-between sm:justify-end space-x-3">
                       {getStatusBadge(file.status, file.result)}
 
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="ghost" size="sm" onClick={() => handleViewDetails(file.id)}>
                             <Eye className="h-4 w-4" />
+                            <span className="ml-1 sm:hidden">Details</span>
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-md sm:max-w-lg">
                           <DialogHeader>
                             <DialogTitle>File Details</DialogTitle>
                             <DialogDescription>Detailed information about the scanned file</DialogDescription>
                           </DialogHeader>
                           {selectedFile && (
-                            <div className="space-y-4">
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
                               <div>
                                 <label className="text-sm font-medium text-gray-700">Filename</label>
-                                <p className="text-sm text-gray-900">{selectedFile.filename}</p>
+                                <p className="text-sm text-gray-900 break-all">{selectedFile.filename}</p>
                               </div>
                               <div>
                                 <label className="text-sm font-medium text-gray-700">Size</label>
@@ -427,7 +427,7 @@ export function Dashboard() {
                                   <label className="text-sm font-medium text-gray-700">Detected Threats</label>
                                   <div className="mt-1 space-y-1">
                                     {selectedFile.dangerousKeywords.map((keyword, index) => (
-                                      <Badge key={index} variant="destructive" className="mr-1">
+                                      <Badge key={index} variant="destructive" className="mr-1 mb-1">
                                         {keyword}
                                       </Badge>
                                     ))}

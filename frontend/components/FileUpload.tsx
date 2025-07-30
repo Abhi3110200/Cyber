@@ -148,20 +148,20 @@ export function FileUpload() {
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-      <CardHeader className="text-center space-y-2">
-        <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          <Upload className="h-8 w-8 text-blue-600" />
+      <CardHeader className="text-center space-y-2 px-4 sm:px-6">
+        <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mb-2 sm:mb-4">
+          <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
         </div>
-        <CardTitle className="text-3xl font-bold text-gray-900">Secure File Upload</CardTitle>
-        <CardDescription className="text-gray-600 text-lg">
+        <CardTitle className="text-2xl sm:text-3xl font-bold text-gray-900">Secure File Upload</CardTitle>
+        <CardDescription className="text-gray-600 text-base sm:text-lg px-2">
           Upload your files securely for malware scanning and analysis
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
         {/* Drag and Drop Area */}
         <div
-          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          className={`relative border-2 border-dashed rounded-lg p-4 sm:p-8 text-center transition-colors ${
             dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"
           }`}
           onDragEnter={handleDrag}
@@ -178,19 +178,19 @@ export function FileUpload() {
             disabled={uploading}
           />
 
-          <div className="space-y-4">
-            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+          <div className="space-y-3 sm:space-y-4">
+            <Upload className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
             <div>
-              <p className="text-lg font-medium text-gray-900">
+              <p className="text-base sm:text-lg font-medium text-gray-900">
                 Drop your file here, or <span className="text-blue-600">browse</span>
               </p>
-              <p className="text-sm text-gray-500 mt-1">Supports PDF, DOCX, JPG, PNG up to 5MB</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">Supports PDF, DOCX, JPG, PNG up to 5MB</p>
             </div>
           </div>
         </div>
 
         {/* File Type Badges */}
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
           {ALLOWED_TYPES.map((type) => (
             <Badge key={type} variant="secondary" className="text-xs">
               {type.toUpperCase().replace(".", "")}
@@ -200,18 +200,18 @@ export function FileUpload() {
 
         {/* Selected File Display */}
         {file && (
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 min-w-0 flex-1">
                 {getFileIcon(file.name)}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
                   <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
                 </div>
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
               </div>
               {!uploading && (
-                <Button variant="ghost" size="sm" onClick={removeFile} className="ml-2 h-8 w-8 p-0">
+                <Button variant="ghost" size="sm" onClick={removeFile} className="ml-2 h-8 w-8 p-0 flex-shrink-0">
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -234,37 +234,37 @@ export function FileUpload() {
         <Button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 text-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 sm:py-4 text-base sm:text-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {uploading ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Uploading...
+              <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+              <span className="text-sm sm:text-base">Uploading...</span>
             </>
           ) : (
             <>
-              <Upload className="mr-2 h-5 w-5" />
-              Upload & Scan File
+              <Upload className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Upload & Scan File</span>
             </>
           )}
         </Button>
 
         {/* Security Notice */}
         <Alert className="border-blue-200 bg-blue-50">
-          <AlertCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
+          <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />
+          <AlertDescription className="text-blue-800 text-sm">
             Your files are encrypted during upload and scanned for malware using advanced detection algorithms.
           </AlertDescription>
         </Alert>
 
-        <div className="pt-4 border-t border-gray-200">
-              <Link
-                href="/dashboard"
-                className="block w-full text-center py-2.5 px-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-              >
-                Go to Dashboard →
-              </Link>
-            </div>
+        <div className="pt-3 sm:pt-4 border-t border-gray-200">
+          <Link
+            href="/dashboard"
+            className="block w-full text-center py-2.5 px-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base"
+          >
+            Go to Dashboard →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )
